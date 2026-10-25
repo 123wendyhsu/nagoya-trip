@@ -52,7 +52,7 @@ nav.tabs button{flex:1;padding:10px 0 8px;font-size:11px;color:var(--mute)}nav.t
           <h3 class="font-semibold leading-snug">{{s.n}}</h3>
           <p v-if="s.d" class="text-sm mute mt-1">{{s.d}}</p>
           <div class="flex flex-wrap gap-1 mt-3">
-            <template v-if="s.q"><a class="btn" :href="nav(s.q,'transit')" target="_blank" rel="noopener">🚇 導航</a><a class="btn" :href="nav(s.q,'walking')" target="_blank" rel="noopener">🚶 步行</a></template>
+            <template v-if="s.q"><a class="btn" :href="nav(s)" target="_blank" rel="noopener">📍 在地圖開啟</a></template>
             <button class="btn2" @click="openEdit(s)">編輯</button><button class="btn2" @click="del(s)">刪除</button>
           </div>
         </div>
@@ -107,8 +107,8 @@ nav.tabs button{flex:1;padding:10px 0 8px;font-size:11px;color:var(--mute)}nav.t
         <a v-if="route" class="pri block text-center" :href="route" target="_blank" rel="noopener">🗺️ 開啟當日步行路線</a>
         <p v-else class="text-sm mute">需要至少兩個有地點的行程。</p>
       </section>
-      <a v-for="(s,i) in mapped" :key="s.id" class="card p-4 flex items-center gap-3 block" :href="nav(s.q,'transit')" target="_blank" rel="noopener">
-        <span class="tm w-8 text-center">{{i+1}}</span><div class="flex-1"><p class="font-semibold text-sm">{{s.n}}</p><p class="text-[11px] mute">{{s.t}} · 點擊導航</p></div><span class="mute">›</span>
+      <a v-for="(s,i) in mapped" :key="s.id" class="card p-4 flex items-center gap-3 block" :href="nav(s)" target="_blank" rel="noopener">
+        <span class="tm w-8 text-center">{{i+1}}</span><div class="flex-1"><p class="font-semibold text-sm">{{s.n}}</p><p class="text-[11px] mute">{{s.t}} · 點擊開啟 Google Maps</p></div><span class="mute">›</span>
       </a>
     </template>
   </main>
@@ -136,7 +136,7 @@ const days=[['2026-10-30','五','10/30'],['2026-10-31','六','10/31'],['2026-11-
 const id=()=>Math.random().toString(36).slice(2);
 const S=(t,n,q,d='')=>({id:id(),t,n,q,d});
 const seed=()=>({
-'2026-10-30':[S('06:25','抵達中部國際機場','Chubu Centrair International Airport','今天仍是舊制,店內可直接免稅'),S('07:40','名鐵 μ-Sky → 名鐵名古屋','Meitetsu Nagoya Station','約 30 分鐘'),S('08:30','Tsubame Pan & Milk 名驛店','Tsubame Pan and Milk Meieki','吐司、軟冰淇淋;營業時間請先確認'),S('09:45','寄放行李(飯店 / ecbo cloak)','2-10-12 Nishiki Naka-ku Nagoya','伏見站步行約 6–8 分'),S('11:00','大須商店街','Osu Shopping Street Nagoya','上前津站步行;邊逛邊吃午餐'),S('15:00','榮商圈逛街','Lachic Nagoya','松坂屋、三越、PARCO、SUNSHINE SAKAE;藥妝採買'),S('17:30','中部電力 MIRAI TOWER','Chubu Electric Power MIRAI TOWER Nagoya','黃昏上塔看夜景'),S('19:00','世界の山ちゃん','World no Yamachan Sakae Nagoya','胡椒手羽先;用 okie 翻譯菜單')],
+'2026-10-30':[S('06:25','抵達中部國際機場','Chubu Centrair International Airport','今天仍是舊制,店內可直接免稅'),S('07:40','名鐵 μ-Sky → 名鐵名古屋','Meitetsu Nagoya Station','約 30 分鐘'),S('08:30','Tsubame Pan & Milk 名驛店','Tsubame Pan and Milk Meieki','吐司、軟冰淇淋;營業時間請先確認'),S('09:45','寄放行李(飯店 / ecbo cloak)','2-10-12 Nishiki Naka-ku Nagoya','伏見站步行約 6–8 分'),S('11:00','大須商店街','Osu Shopping Street Nagoya','上前津站步行;邊逛邊吃午餐'),S('15:00','榮商圈逛街','ラシック 名古屋','松坂屋、三越、PARCO、SUNSHINE SAKAE;藥妝採買'),S('17:30','中部電力 MIRAI TOWER','中部電力 MIRAI TOWER','黃昏上塔看夜景'),S('19:00','世界の山ちゃん','世界の山ちゃん 栄 名古屋','胡椒手羽先;用 okie 翻譯菜單')],
 '2026-10-31':[S('09:00','名古屋城','Nagoya Castle','市役所站 7 號出口;天守閣整修中,可看本丸御殿'),S('12:00','金鯱橫丁午餐','Kinshachi Yokocho Nagoya','名古屋めし'),S('14:30','久屋大通公園散步','Hisaya-odori Park Nagoya',''),S('16:00','台中夜市(開幕日)','EDION Hisaya Hiroba Nagoya','12:00–21:00,矢場町站 2/5/6 號出口'),S('19:00','活魚料理 食堂','活魚料理 食堂 名古屋','位置待確認')],
 '2026-11-02':[S('07:30','白川鄉一日遊(已訂包車)','Shirakawa-go Gassho-zukuri Village','週一;回程晚可用 GO 叫車'),S('20:30','超商宵夜','Lawson Nishiki Nagoya','')],
 '2026-11-01':[S('09:00','名鐵名古屋 → 犬山','Inuyama Station','犬山線約 30 分鐘'),S('10:00','犬山城 + 城下町','Inuyama Castle','國寶天守;城下町小吃當午餐'),S('14:30','熱田神宮','Atsuta Shrine','名鐵神宮前站步行;宮きしめん'),S('18:00','台中夜市','EDION Hisaya Hiroba Nagoya','到 21:00')],
@@ -163,7 +163,8 @@ createApp({setup(){
   const hr=t=>date.value+'T'+(t||'12').slice(0,2)+':00';
   const wxAt=t=>{const w=wx[hr(t)];return w?icon(w.c)+' '+w.t+'°':'~'+avg[date.value][1]+'°'};
   const dayWx=d=>{const v=Object.keys(wx).filter(k=>k.startsWith(d.d));if(!v.length)return '🌤 '+avg[d.d][0]+'–'+avg[d.d][1]+'°';const ts=v.map(k=>wx[k].t),m=wx[d.d+'T12:00'];return icon(m&&m.c)+' '+Math.min(...ts)+'–'+Math.max(...ts)+'°'};
-  const nav=(q,m)=>'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(q)+'&travelmode='+m;
+  const HOTEL='2-10-12 Nishiki Naka-ku Nagoya';
+  const nav=s=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(s.q);
   const route=computed(()=>{const m=mapped.value.slice(0,10);if(m.length<2)return '';const e=x=>encodeURIComponent(x.q);return 'https://www.google.com/maps/dir/?api=1&origin='+e(m[0])+'&destination='+e(m[m.length-1])+(m.length>2?'&waypoints='+m.slice(1,-1).map(e).join('%7C'):'')+'&travelmode=walking'});
   const openEdit=s=>{form.value=s?{...s}:{t:'09:00',n:'',q:'',d:''}};
   const save=()=>{const f=form.value;if(!f.n)return;const a=stops[date.value]||(stops[date.value]=[]);if(f.id){const i=a.findIndex(x=>x.id===f.id);a[i]={...f}}else a.push({...f,id:id()});form.value=null};
