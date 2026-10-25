@@ -99,7 +99,8 @@ nav.tabs button{flex:1;padding:10px 0 8px;font-size:11px;color:var(--mute)}nav.t
       </section>
     </template>
 
-    <template v-if="tab==='bk'"><section class="card p-4 space-y-3"><h2 class="font-semibold">儲存與備份</h2><p class="text-sm mute">{{ok?'資料會自動存在這個瀏覽器裡。':'⚠️ 這個瀏覽器無法儲存資料,請改用 Safari 或 Chrome 直接開啟網址(不要在 LINE 內開)。'}}</p><button class="pri" @click="saveNow">💾 立即儲存</button><button class="pri" @click="copyBk">📋 複製備份(可貼到 LINE 記事本)</button><textarea class="inp" rows="5" v-model="bk" placeholder="還原:把備份內容貼在這裡"></textarea><button class="pri" @click="restore">♻️ 從備份還原</button><p class="text-xs mute">{{msg}}</p></section></template>
+    <template v-if="tab==='bk'"><section class="card p-4 space-y-3"><h2 class="font-semibold">儲存與備份</h2><p class="text-sm mute">{{ok?'資料會自動存在這個瀏覽器裡。':'⚠️ 這個瀏覽器無法儲存資料,請改用 Safari 或 Chrome 直接開啟網址(不要在 LINE 內開)。'}}</p><button class="pri" @click="saveNow">💾 立即儲存</button><button class="pri" @click="copyBk">📋 複製備份(可貼到 LINE 記事本)</button><textarea class="inp" rows="5" v-model="bk" placeholder="還原:把備份內容貼在這裡"></textarea><button class="pri" @click="restore">♻️ 從備份還原</button><p class="text-xs mute">{{msg}}</p></section>
+    <section class="card p-4 space-y-3"><h2 class="font-semibold">🔄 與旅伴同步</h2><p class="text-xs mute">兩人貼上同一個資料庫網址,行程與分帳就會自動同步(約每 8 秒)。請勿同時編輯。</p><input class="inp" v-model="syncUrl" placeholder="Firebase Realtime Database 網址"><button class="pri" @click="setSync">連線並同步</button><p class="text-xs mute">{{syncMsg}}</p></section></template>
     <!-- 地圖 -->
     <template v-if="tab==='map'">
       <section class="card p-4">
@@ -145,17 +146,18 @@ const seed=()=>({
 '2026-11-01':[S('09:00','名鐵名古屋 → 犬山','Inuyama Station','犬山線約 30 分鐘'),S('10:00','犬山城 + 城下町','Inuyama Castle','國寶天守;城下町小吃當午餐'),S('14:30','熱田神宮','Atsuta Shrine','名鐵神宮前站步行;宮きしめん'),S('18:00','台中夜市','EDION Hisaya Hiroba Nagoya','到 21:00')],
 '2026-11-03':[S('10:00','退房 · 寄放行李','〒460-0003 愛知県名古屋市中区錦2-10-12','ecbo cloak 或飯店櫃台'),S('10:30','榮最後採買','Matsuzakaya Nagoya','今天起先付含稅價,機場退稅'),S('13:00','台中夜市(最終日)','EDION Hisaya Hiroba Nagoya','到 20:00'),S('15:30','名古屋站伴手禮','JR Nagoya Takashimaya','ぴよりん、外郎、蝦餅'),S('17:30','取行李','Nagoya Station',''),S('18:15','名鐵 μ-Sky 往機場','Chubu Centrair International Airport','約 30 分鐘'),S('19:30','退稅查驗 + 報到','Chubu Centrair International Airport','22:55 起飛;先過退稅機台')]
 });
+const seed2=()=>({'2026-10-30':[{id:'djal3mfsz78',t:'06:25',n:'抵達中部國際機場',q:'Chubu Centrair International Airport',d:'今天仍是舊制,店內可直接免稅'},{id:'vuc4nqvwvvg',t:'07:40',n:'名鐵 μ-Sky → 名鐵名古屋',q:'Meitetsu Nagoya Station',d:'約 30 分鐘'},{id:'gfyc0f9761w',t:'08:30',n:'Tsubame Pan & Milk 名驛店',q:'Tsubame Pan and Milk Meieki',d:'吐司、軟冰淇淋;營業時間請先確認'},{id:'2l9okdeg74f',t:'11:00',n:'大須商店街',q:'Osu Shopping Street Nagoya',d:'上前津站步行;邊逛邊吃午餐'},{id:'oeoz0wgid7e',t:'15:00',n:'榮商圈逛街',q:'ラシック 名古屋',d:'松坂屋、三越、PARCO、SUNSHINE SAKAE;藥妝採買'},{id:'5b84ckhu695',t:'17:30',n:'中部電力 MIRAI TOWER',q:'中部電力 MIRAI TOWER',d:'黃昏上塔看夜景'},{id:'19gic60v5o2',t:'11:00',n:'名古屋城',q:'Nagoya Castle',d:'市役所站 7 號出口;天守閣整修中,可看本丸御殿'},{id:'f07aekpurqe',t:'12:00',n:'金鯱橫丁午餐',q:'Kinshachi Yokocho Nagoya',d:'矢場味噌豬排」跟「備長鰻魚飯'},{id:'423mq86rvv8',t:'19:00',n:'世界的山將',q:'世界の山ちゃん 栄 名古屋',d:'胡椒手羽先;用 okie 翻譯菜單'},{id:'8odyu4us8hl',t:'09:45',n:'寄放行李(飯店 / apa)',q:'〒460-0003 愛知県名古屋市中区錦2-10-12',d:'伏見站步行約 6–8 分'}],'2026-10-31':[{id:'r96n848ck6',t:'16:00',n:'台中夜市(開幕日)',q:'EDION Hisaya Hiroba Nagoya',d:'久屋大通公園'},{id:'p3n8jmdwxoc',t:'09:00',n:'名鐵名古屋 → 犬山',q:'Inuyama Station',d:'犬山線約 30 分鐘'},{id:'eclw3xiv3bb',t:'10:00',n:'犬山城 + 城下町',q:'Inuyama Castle',d:'國寶天守;城下町小吃當午餐'},{id:'cbgrk1dv69',t:'14:30',n:'熱田神宮',q:'Atsuta Shrine',d:'名鐵神宮前站步行;宮きしめん'},{id:'dh6i7jvkvro',t:'12:00',n:'鰻魚飯',q:'熱田蓬萊軒 神宮店 あつた蓬莱軒 神宮店',d:'1點左右排隊減少'},{id:'78wdmdpgkce',t:'08:50',n:'定食早點',q:'Shinpachi Shokudō Nagoya Fushimi しんぱち食堂 名古屋伏見店',d:'味噌湯'}],'2026-11-01':[{id:'q29tm06dwoa',t:'08:00',n:'上高地一日遊',q:'',d:'可以提早到車站買東西車上吃。上高地必吃蘋果派'}],'2026-11-02':[{id:'z9c2680k81',t:'07:30',n:'白川鄉一日遊(已訂包車)',q:'Shirakawa-go Gassho-zukuri Village',d:'週一;回程晚可用 GO 叫車'},{id:'f7t4q1c34fj',t:'20:30',n:'超商宵夜',q:'Lawson Nishiki Nagoya',d:''},{id:'ahlycxlojt5',t:'12:00',n:'飛驒牛烏龍麵',q:'Mensho Yocha めん処 陽茶',d:''},{id:'hvu7au3d2oj',t:'20:00',n:'回名古屋車站',q:'',d:''},{id:'lnwval169m',t:'20:10',n:'燒肉',q:'Fushimiya Bettei 名駅焼肉 伏見屋 飛騨牛 別邸',d:'名古屋站附近'},{id:'wbz5frvmdn9',t:'10:00',n:'水布丁',q:'布丁之家',d:'必吃'},{id:'1mkgnk8i9e6',t:'10:10',n:'飛驒牛壽司',q:'OKESA',d:''},{id:'82n4gfw28rv',t:'10:20',n:'五平餅',q:'烤糰子.米餅.飛驒牛 ぜん助 ぜん助家',d:''},{id:'6cjux7n06f',t:'13:30',n:'味噌',q:'大屋釀造醬油 （株）大のや醸造',d:'推推'}],'2026-11-03':[{id:'gfl2eoq79j',t:'10:30',n:'榮最後採買',q:'Matsuzakaya Nagoya',d:'今天起先付含稅價,機場退稅'},{id:'1m98ske5y6d',t:'15:30',n:'名古屋站伴手禮',q:'JR Nagoya Takashimaya',d:'ぴよりん、外郎、蝦餅'},{id:'526f8sk2jw4',t:'18:15',n:'名鐵 μ-Sky 往機場',q:'Chubu Centrair International Airport',d:'約 30 分鐘'},{id:'hsdpupwmssc',t:'19:30',n:'退稅查驗 + 報到',q:'Chubu Centrair International Airport',d:'22:55 起飛;先過退稅機台'},{id:'oge0zpgzp4',t:'12:00',n:'味噌烏龍麵',q:'味噌鍋燒烏龍 山本屋總本家 山本屋総本家 本家',d:''},{id:'3han5x3xgwf',t:'10:00',n:'退房 ',q:'〒460-0003 愛知県名古屋市中区錦2-10-12',d:'ecbo cloak 或飯店櫃台'}]});
 const avg={'2026-10-30':[11,20],'2026-10-31':[11,20],'2026-11-01':[10,19],'2026-11-02':[10,19],'2026-11-03':[10,19]};
 const icon=c=>c==null?'🌤':c===0?'☀️':c<3?'🌤':c===3?'☁️':c<50?'🌫':c<70?'🌧':c<80?'❄️':c<90?'🌦':'⛈';
 createApp({setup(){
-  let saved={};try{saved=JSON.parse(localStorage.getItem('ngy26b')||'{}')}catch(e){}
+  let saved={};try{saved=JSON.parse(localStorage.getItem('ngy26c')||'{}')}catch(e){}
   const sel=ref(0),tab=ref('plan'),form=ref(null),live=ref(false);
-  const stops=reactive(saved.stops||seed());
-  const members=reactive(saved.members||['我','旅伴B']);
+  const stops=reactive(saved.stops||seed2());
+  const members=reactive(saved.members||['我','巧恩']);
   const expenses=reactive(saved.expenses||[]);
   const ex=reactive({title:'',amt:null,payer:0,part:members.map((_,k)=>k),cur:'JPY'});const rate=ref(saved.rate||null),rateLive=ref(false);const needRate=computed(()=>!(rate.value>0)&&expenses.some(e=>e.cur==='TWD'));
   const wx=reactive({});
-  watch([stops,members,expenses,rate],()=>{try{localStorage.setItem('ngy26b',JSON.stringify({stops,members,expenses,rate:rate.value}))}catch(e){}},{deep:true});
+  watch([stops,members,expenses,rate],()=>{try{localStorage.setItem('ngy26c',JSON.stringify({stops,members,expenses,rate:rate.value}))}catch(e){}},{deep:true});
   onMounted(async()=>{try{const r=await fetch('https://open.er-api.com/v6/latest/JPY');const j=await r.json();if(j.rates&&j.rates.TWD){rate.value=Math.round(j.rates.TWD*10000)/10000;rateLive.value=true}}catch(e){}});
   onMounted(async()=>{try{
     const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.18&longitude=136.91&hourly=temperature_2m,weather_code&timezone=Asia%2FTokyo&start_date=2026-10-30&end_date=2026-11-03');
@@ -173,9 +175,20 @@ createApp({setup(){
   try{localStorage.setItem('t','1');localStorage.removeItem('t')}catch(e){ok.value=false}
   try{navigator.storage.persist()}catch(e){}
   const snap=()=>JSON.stringify({stops,members,expenses,rate:rate.value});
-  const saveNow=()=>{try{localStorage.setItem('ngy26b',snap());ok.value=true;savedLbl.value='已存 '+new Date().toTimeString().slice(0,5);msg.value='已儲存 ✓'}catch(e){ok.value=false;msg.value='儲存失敗,請改用 Safari / Chrome 開啟。'}};
+  const saveNow=()=>{try{localStorage.setItem('ngy26c',snap());ok.value=true;savedLbl.value='已存 '+new Date().toTimeString().slice(0,5);msg.value='已儲存 ✓'}catch(e){ok.value=false;msg.value='儲存失敗,請改用 Safari / Chrome 開啟。'}};
   const copyBk=async()=>{bk.value=snap();try{await navigator.clipboard.writeText(bk.value);msg.value='已複製,請貼到 LINE 記事本或 Keep 保存。'}catch(e){msg.value='請長按上方方框全選複製。'}};
   const restore=()=>{try{const j=JSON.parse(bk.value);if(!j.stops)throw 0;Object.keys(stops).forEach(k=>delete stops[k]);Object.assign(stops,j.stops);members.splice(0,members.length,...(j.members||[]));expenses.splice(0,expenses.length,...(j.expenses||[]));rate.value=j.rate||rate.value;ex.part=members.map((_,k)=>k);ex.payer=0;saveNow();msg.value='已還原 ✓'}catch(e){msg.value='備份內容格式不正確。'}};
+  let u0='';try{u0=localStorage.getItem('ngy26url')||''}catch(e){}
+  const syncUrl=ref(u0),syncMsg=ref(u0?'已設定網址':'尚未連線');
+  let lastTs=0,applying=false,timer=null;
+  const hm=()=>new Date().toTimeString().slice(0,5);
+  const ep=()=>syncUrl.value.trim().replace(/\/+$/,'').replace(/\/trip\.json$/,'')+'/trip.json';
+  const apply=d=>{Object.keys(stops).forEach(k=>delete stops[k]);Object.assign(stops,d.stops||{});members.splice(0,members.length,...(d.members||[]));expenses.splice(0,expenses.length,...(d.expenses||[]));rate.value=d.rate||rate.value;ex.part=members.map((_,k)=>k);if(ex.payer>=members.length)ex.payer=0};
+  const push=async()=>{if(!syncUrl.value.trim()||applying)return;try{const ts=Date.now();const r=await fetch(ep(),{method:'PUT',body:JSON.stringify({ts,data:JSON.parse(snap())})});if(r.ok){lastTs=ts;syncMsg.value='已同步 '+hm()}else syncMsg.value='同步失敗('+r.status+'),請檢查資料庫規則'}catch(e){syncMsg.value='同步失敗,請檢查網址與網路'}};
+  const pull=async()=>{if(!syncUrl.value.trim()||applying)return;try{const r=await fetch(ep());const j=await r.json();if(j&&j.data){if(j.ts>lastTs){applying=true;apply(j.data);lastTs=j.ts;syncMsg.value='已更新 '+hm();setTimeout(()=>{applying=false},1500)}}else await push()}catch(e){syncMsg.value='無法連線'}};
+  const setSync=()=>{try{localStorage.setItem('ngy26url',syncUrl.value.trim())}catch(e){}syncMsg.value='連線中...';pull()};
+  watch([stops,members,expenses,rate],()=>{if(applying||!syncUrl.value.trim())return;clearTimeout(timer);timer=setTimeout(push,1200)},{deep:true});
+  setInterval(pull,8000);setTimeout(pull,600);
   const nav=s=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(s.q);
   const route=computed(()=>{const m=mapped.value.slice(0,10);if(m.length<2)return '';const e=x=>encodeURIComponent(x.q);return 'https://www.google.com/maps/dir/?api=1&origin='+e(m[0])+'&destination='+e(m[m.length-1])+(m.length>2?'&waypoints='+m.slice(1,-1).map(e).join('%7C'):'')+'&travelmode=walking'});
   const openEdit=s=>{form.value=s?{...s,date:date.value}:{t:'09:00',n:'',q:'',d:'',date:date.value}};
@@ -186,7 +199,7 @@ createApp({setup(){
   const pay=computed(()=>{const b=members.map(()=>0);expenses.forEach(e=>{const a=e.cur==='TWD'?(rate.value>0?e.amt/rate.value:0):e.amt;b[e.payer]+=a;const P=e.part.filter(p=>p<members.length);P.forEach(p=>b[p]-=a/P.length)});
     const cr=[],db=[];b.forEach((v,i)=>{v=Math.round(v);if(v>0)cr.push({i,v});if(v<0)db.push({i,v:-v})});const out=[];
     while(cr.length&&db.length){const c=cr[0],d=db[0],a=Math.min(c.v,d.v);out.push({from:members[d.i],to:members[c.i],amt:a});c.v-=a;d.v-=a;if(!c.v)cr.shift();if(!d.v)db.shift()}return out});
-  return{days,sel,tab,form,live,stops,members,expenses,ex,rate,rateLive,needRate,cnt,ok,savedLbl,bk,msg,saveNow,copyBk,restore,list,mapped,wxAt,dayWx,nav,route,openEdit,save,del,rmMember,addEx,pay}
+  return{days,sel,tab,form,live,stops,members,expenses,ex,rate,rateLive,needRate,cnt,ok,savedLbl,bk,msg,saveNow,copyBk,restore,syncUrl,syncMsg,setSync,list,mapped,wxAt,dayWx,nav,route,openEdit,save,del,rmMember,addEx,pay}
 }}).mount('#app');
 </script>
 </body>
