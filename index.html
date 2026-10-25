@@ -124,6 +124,7 @@ nav.tabs button{flex:1;padding:10px 0 8px;font-size:11px;color:var(--mute)}nav.t
   <div v-if="form" class="sheet" @click.self="form=null">
     <div class="card w-full max-w-md mx-auto p-5 space-y-3" style="border-radius:28px 28px 0 0">
       <h2 class="font-semibold">{{form.id?'編輯行程':'新增行程'}}</h2>
+      <select class="inp" v-model="form.date"><option v-for="d in days" :key="d.d" :value="d.d">{{d.l}} 週{{d.w}}</option></select>
       <div class="flex gap-2"><input class="inp" type="time" v-model="form.t"><input class="inp" v-model="form.n" placeholder="名稱"></div>
       <input class="inp" v-model="form.q" placeholder="地點(用於導航,可留空)">
       <input class="inp" v-model="form.d" placeholder="備註">
@@ -177,8 +178,8 @@ createApp({setup(){
   const restore=()=>{try{const j=JSON.parse(bk.value);if(!j.stops)throw 0;Object.keys(stops).forEach(k=>delete stops[k]);Object.assign(stops,j.stops);members.splice(0,members.length,...(j.members||[]));expenses.splice(0,expenses.length,...(j.expenses||[]));rate.value=j.rate||rate.value;ex.part=members.map((_,k)=>k);ex.payer=0;saveNow();msg.value='已還原 ✓'}catch(e){msg.value='備份內容格式不正確。'}};
   const nav=s=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(s.q);
   const route=computed(()=>{const m=mapped.value.slice(0,10);if(m.length<2)return '';const e=x=>encodeURIComponent(x.q);return 'https://www.google.com/maps/dir/?api=1&origin='+e(m[0])+'&destination='+e(m[m.length-1])+(m.length>2?'&waypoints='+m.slice(1,-1).map(e).join('%7C'):'')+'&travelmode=walking'});
-  const openEdit=s=>{form.value=s?{...s}:{t:'09:00',n:'',q:'',d:''}};
-  const save=()=>{const f=form.value;if(!f.n)return;const a=stops[date.value]||(stops[date.value]=[]);if(f.id){const i=a.findIndex(x=>x.id===f.id);a[i]={...f}}else a.push({...f,id:id()});form.value=null};
+  const openEdit=s=>{form.value=s?{...s,date:date.value}:{t:'09:00',n:'',q:'',d:'',date:date.value}};
+  const save=()=>{const f=form.value;if(!f.n)return;const {date:nd,...s}=f;const a=stops[date.value]||(stops[date.value]=[]);const t=stops[nd]||(stops[nd]=[]);if(s.id){const i=a.findIndex(x=>x.id===s.id);if(i>=0)a.splice(i,1)}t.push(s.id?s:{...s,id:id()});form.value=null};
   const del=s=>{const a=stops[date.value];a.splice(a.findIndex(x=>x.id===s.id),1)};
   const rmMember=i=>{members.splice(i,1);expenses.splice(0,expenses.length,...expenses.filter(e=>e.payer!==i).map(e=>({...e,payer:e.payer>i?e.payer-1:e.payer,part:e.part.filter(p=>p!==i).map(p=>p>i?p-1:p)})).filter(e=>e.part.length));ex.payer=0;ex.part=members.map((_,k)=>k)};
   const addEx=()=>{if(!ex.title||!(ex.amt>0)||!ex.part.length)return;expenses.push({id:id(),title:ex.title,amt:Math.round(ex.amt),cur:ex.cur,payer:ex.payer,part:ex.part.filter(p=>p<members.length)});ex.title='';ex.amt=null};
