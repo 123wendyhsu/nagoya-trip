@@ -74,10 +74,10 @@ nav.tabs button{flex:1;padding:10px 0 8px;font-size:11px;color:var(--mute)}nav.t
         </div>
       </section>
       <section class="card p-4 space-y-3">
-        <h2 class="font-semibold">新增花費</h2>
+        <h2 class="font-semibold">新增花費</h2><div class="flex items-center gap-2 text-sm"><span class="mute">匯率 ¥1 =</span><input class="inp" style="width:90px" type="number" step="0.0001" inputmode="decimal" v-model.number="rate" placeholder="自動"><span class="mute">NT$</span><span class="text-[11px] mute">{{rateLive?'即時':'請手動輸入'}}</span></div>
         <input class="inp" v-model="ex.title" placeholder="項目(例:晚餐)">
         <div class="flex gap-2">
-          <input class="inp" type="number" inputmode="numeric" v-model.number="ex.amt" placeholder="金額 ¥">
+          <select class="inp" style="width:84px" v-model="ex.cur"><option value="JPY">日幣</option><option value="TWD">台幣</option></select><input class="inp" type="number" inputmode="numeric" v-model.number="ex.amt" :placeholder="'金額 '+(ex.cur==='TWD'?'NT$':'¥')">
           <select class="inp" v-model.number="ex.payer"><option v-for="(m,i) in members" :value="i">{{m}} 付</option></select>
         </div>
         <div class="flex flex-wrap gap-2 text-sm"><span class="mute">分攤:</span>
@@ -89,13 +89,13 @@ nav.tabs button{flex:1;padding:10px 0 8px;font-size:11px;color:var(--mute)}nav.t
         <h2 class="font-semibold mb-2">花費紀錄</h2>
         <div v-for="e in expenses" :key="e.id" class="flex justify-between items-center py-2 border-b last:border-0" style="border-color:var(--line)">
           <div><p class="text-sm">{{e.title}}</p><p class="text-[11px] mute">{{members[e.payer]}} 付 · {{e.part.length}} 人分</p></div>
-          <div class="flex items-center gap-2"><b>¥{{e.amt.toLocaleString()}}</b><button class="btn2" @click="expenses.splice(expenses.indexOf(e),1)">×</button></div>
+          <div class="flex items-center gap-2"><b>{{e.cur==='TWD'?'NT$':'¥'}}{{e.amt.toLocaleString()}}</b><button class="btn2" @click="expenses.splice(expenses.indexOf(e),1)">×</button></div>
         </div>
       </section>
       <section class="card p-4" style="background:var(--gl)">
         <h2 class="font-semibold mb-2">結算</h2>
-        <p v-if="!pay.length" class="text-sm mute">目前不用互相轉帳 🎉</p>
-        <p v-for="(p,i) in pay" :key="i" class="py-1"><b>{{p.from}}</b> → <b>{{p.to}}</b>:<span style="color:var(--gd)" class="font-semibold"> ¥{{p.amt.toLocaleString()}}</span></p>
+        <p v-if="needRate" class="text-xs" style="color:#d9776a">有台幣花費,請先輸入匯率才能結算。</p><p v-if="!pay.length" class="text-sm mute">目前不用互相轉帳 🎉</p>
+        <p v-for="(p,i) in pay" :key="i" class="py-1"><b>{{p.from}}</b> → <b>{{p.to}}</b>:<span style="color:var(--gd)" class="font-semibold"> ¥{{p.amt.toLocaleString()}}</span><span v-if="rate>0" class="text-xs mute"> ≈ NT${{Math.round(p.amt*rate).toLocaleString()}}</span></p>
       </section>
     </template>
 
@@ -150,9 +150,10 @@ createApp({setup(){
   const stops=reactive(saved.stops||seed());
   const members=reactive(saved.members||['我','旅伴B','旅伴C']);
   const expenses=reactive(saved.expenses||[]);
-  const ex=reactive({title:'',amt:null,payer:0,part:[0,1,2]});
+  const ex=reactive({title:'',amt:null,payer:0,part:[0,1,2],cur:'JPY'});const rate=ref(saved.rate||null),rateLive=ref(false);const needRate=computed(()=>!(rate.value>0)&&expenses.some(e=>e.cur==='TWD'));
   const wx=reactive({});
-  watch([stops,members,expenses],()=>{try{localStorage.setItem('ngy26b',JSON.stringify({stops,members,expenses}))}catch(e){}},{deep:true});
+  watch([stops,members,expenses,rate],()=>{try{localStorage.setItem('ngy26b',JSON.stringify({stops,members,expenses,rate:rate.value}))}catch(e){}},{deep:true});
+  onMounted(async()=>{try{const r=await fetch('https://open.er-api.com/v6/latest/JPY');const j=await r.json();if(j.rates&&j.rates.TWD){rate.value=Math.round(j.rates.TWD*10000)/10000;rateLive.value=true}}catch(e){}});
   onMounted(async()=>{try{
     const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.18&longitude=136.91&hourly=temperature_2m,weather_code&timezone=Asia%2FTokyo&start_date=2026-10-30&end_date=2026-11-03');
     const j=await r.json();j.hourly.time.forEach((t,i)=>{wx[t]={t:Math.round(j.hourly.temperature_2m[i]),c:j.hourly.weather_code[i]}});live.value=true;
@@ -170,11 +171,11 @@ createApp({setup(){
   const save=()=>{const f=form.value;if(!f.n)return;const a=stops[date.value]||(stops[date.value]=[]);if(f.id){const i=a.findIndex(x=>x.id===f.id);a[i]={...f}}else a.push({...f,id:id()});form.value=null};
   const del=s=>{const a=stops[date.value];a.splice(a.findIndex(x=>x.id===s.id),1)};
   const rmMember=i=>{members.splice(i,1);expenses.splice(0,expenses.length,...expenses.filter(e=>e.payer!==i).map(e=>({...e,payer:e.payer>i?e.payer-1:e.payer,part:e.part.filter(p=>p!==i).map(p=>p>i?p-1:p)})).filter(e=>e.part.length));ex.payer=0;ex.part=members.map((_,k)=>k)};
-  const addEx=()=>{if(!ex.title||!(ex.amt>0)||!ex.part.length)return;expenses.push({id:id(),title:ex.title,amt:Math.round(ex.amt),payer:ex.payer,part:[...ex.part]});ex.title='';ex.amt=null};
-  const pay=computed(()=>{const b=members.map(()=>0);expenses.forEach(e=>{b[e.payer]+=e.amt;e.part.forEach(p=>b[p]-=e.amt/e.part.length)});
+  const addEx=()=>{if(!ex.title||!(ex.amt>0)||!ex.part.length)return;expenses.push({id:id(),title:ex.title,amt:Math.round(ex.amt),cur:ex.cur,payer:ex.payer,part:[...ex.part]});ex.title='';ex.amt=null};
+  const pay=computed(()=>{const b=members.map(()=>0);expenses.forEach(e=>{const a=e.cur==='TWD'?(rate.value>0?e.amt/rate.value:0):e.amt;b[e.payer]+=a;e.part.forEach(p=>b[p]-=a/e.part.length)});
     const cr=[],db=[];b.forEach((v,i)=>{v=Math.round(v);if(v>0)cr.push({i,v});if(v<0)db.push({i,v:-v})});const out=[];
     while(cr.length&&db.length){const c=cr[0],d=db[0],a=Math.min(c.v,d.v);out.push({from:members[d.i],to:members[c.i],amt:a});c.v-=a;d.v-=a;if(!c.v)cr.shift();if(!d.v)db.shift()}return out});
-  return{days,sel,tab,form,live,stops,members,expenses,ex,list,mapped,wxAt,dayWx,nav,route,openEdit,save,del,rmMember,addEx,pay}
+  return{days,sel,tab,form,live,stops,members,expenses,ex,rate,rateLive,needRate,list,mapped,wxAt,dayWx,nav,route,openEdit,save,del,rmMember,addEx,pay}
 }}).mount('#app');
 </script>
 </body>
