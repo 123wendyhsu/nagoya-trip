@@ -88,7 +88,7 @@ nav.tabs button{flex:1;padding:10px 0 8px;font-size:11px;color:var(--mute)}nav.t
       <section v-if="expenses.length" class="card p-4">
         <h2 class="font-semibold mb-2">花費紀錄</h2>
         <div v-for="e in expenses" :key="e.id" class="flex justify-between items-center py-2 border-b last:border-0" style="border-color:var(--line)">
-          <div><p class="text-sm">{{e.title}}</p><p class="text-[11px] mute">{{members[e.payer]}} 付 · {{e.part.filter(p=>p<members.length).length}} 人分</p></div>
+          <div><p class="text-sm">{{e.title}}</p><p class="text-[11px] mute">{{members[e.payer]}} 付 · {{cnt(e)}} 人分</p></div>
           <div class="flex items-center gap-2"><b>{{e.cur==='TWD'?'NT$':'¥'}}{{e.amt.toLocaleString()}}</b><button class="btn2" @click="expenses.splice(expenses.indexOf(e),1)">×</button></div>
         </div>
       </section>
@@ -165,6 +165,7 @@ createApp({setup(){
   const wxAt=t=>{const w=wx[hr(t)];return w?icon(w.c)+' '+w.t+'°':'~'+avg[date.value][1]+'°'};
   const dayWx=d=>{const v=Object.keys(wx).filter(k=>k.startsWith(d.d));if(!v.length)return '🌤 '+avg[d.d][0]+'–'+avg[d.d][1]+'°';const ts=v.map(k=>wx[k].t),m=wx[d.d+'T12:00'];return icon(m&&m.c)+' '+Math.min(...ts)+'–'+Math.max(...ts)+'°'};
   const HOTEL='2-10-12 Nishiki Naka-ku Nagoya';
+  const cnt=e=>e.part.filter(p=>p<members.length).length;
   const nav=s=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(s.q);
   const route=computed(()=>{const m=mapped.value.slice(0,10);if(m.length<2)return '';const e=x=>encodeURIComponent(x.q);return 'https://www.google.com/maps/dir/?api=1&origin='+e(m[0])+'&destination='+e(m[m.length-1])+(m.length>2?'&waypoints='+m.slice(1,-1).map(e).join('%7C'):'')+'&travelmode=walking'});
   const openEdit=s=>{form.value=s?{...s}:{t:'09:00',n:'',q:'',d:''}};
@@ -175,7 +176,7 @@ createApp({setup(){
   const pay=computed(()=>{const b=members.map(()=>0);expenses.forEach(e=>{const a=e.cur==='TWD'?(rate.value>0?e.amt/rate.value:0):e.amt;b[e.payer]+=a;const P=e.part.filter(p=>p<members.length);P.forEach(p=>b[p]-=a/P.length)});
     const cr=[],db=[];b.forEach((v,i)=>{v=Math.round(v);if(v>0)cr.push({i,v});if(v<0)db.push({i,v:-v})});const out=[];
     while(cr.length&&db.length){const c=cr[0],d=db[0],a=Math.min(c.v,d.v);out.push({from:members[d.i],to:members[c.i],amt:a});c.v-=a;d.v-=a;if(!c.v)cr.shift();if(!d.v)db.shift()}return out});
-  return{days,sel,tab,form,live,stops,members,expenses,ex,rate,rateLive,needRate,list,mapped,wxAt,dayWx,nav,route,openEdit,save,del,rmMember,addEx,pay}
+  return{days,sel,tab,form,live,stops,members,expenses,ex,rate,rateLive,needRate,cnt,list,mapped,wxAt,dayWx,nav,route,openEdit,save,del,rmMember,addEx,pay}
 }}).mount('#app');
 </script>
 </body>
