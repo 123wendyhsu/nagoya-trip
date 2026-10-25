@@ -33,7 +33,7 @@ nav.tabs button{flex:1;padding:10px 0 8px;font-size:11px;color:var(--mute)}nav.t
   <header class="hd px-5 pt-6 pb-4">
     <div class="flex justify-between items-end">
       <div><p class="text-xs tracking-widest opacity-80">NAGOYA 2026</p><h1 class="text-2xl font-semibold">名古屋 五日旅</h1></div>
-      <p class="text-xs opacity-80">10/30 – 11/3</p>
+      <div class="text-right"><p class="text-xs opacity-80">10/30 – 11/3</p><button class="text-xs mt-1" style="background:rgba(255,255,255,.25);border-radius:999px;padding:4px 12px" @click="saveNow">💾 {{savedLbl}}</button></div>
     </div>
     <div class="strip mt-4 flex gap-2 overflow-x-auto">
       <button v-for="(d,i) in days" :key="d.d" @click="sel=i" :class="['day',sel===i&&'on']">
@@ -99,6 +99,7 @@ nav.tabs button{flex:1;padding:10px 0 8px;font-size:11px;color:var(--mute)}nav.t
       </section>
     </template>
 
+    <template v-if="tab==='bk'"><section class="card p-4 space-y-3"><h2 class="font-semibold">儲存與備份</h2><p class="text-sm mute">{{ok?'資料會自動存在這個瀏覽器裡。':'⚠️ 這個瀏覽器無法儲存資料,請改用 Safari 或 Chrome 直接開啟網址(不要在 LINE 內開)。'}}</p><button class="pri" @click="saveNow">💾 立即儲存</button><button class="pri" @click="copyBk">📋 複製備份(可貼到 LINE 記事本)</button><textarea class="inp" rows="5" v-model="bk" placeholder="還原:把備份內容貼在這裡"></textarea><button class="pri" @click="restore">♻️ 從備份還原</button><p class="text-xs mute">{{msg}}</p></section></template>
     <!-- 地圖 -->
     <template v-if="tab==='map'">
       <section class="card p-4">
@@ -117,6 +118,7 @@ nav.tabs button{flex:1;padding:10px 0 8px;font-size:11px;color:var(--mute)}nav.t
     <button :class="tab==='plan'&&'on'" @click="tab='plan'"><div class="text-lg">📅</div>行程</button>
     <button :class="tab==='split'&&'on'" @click="tab='split'"><div class="text-lg">💴</div>分帳</button>
     <button :class="tab==='map'&&'on'" @click="tab='map'"><div class="text-lg">🗺️</div>地圖</button>
+    <button :class="tab==='bk'&&'on'" @click="tab='bk'"><div class="text-lg">💾</div>備份</button>
   </nav>
 
   <div v-if="form" class="sheet" @click.self="form=null">
@@ -166,6 +168,13 @@ createApp({setup(){
   const dayWx=d=>{const v=Object.keys(wx).filter(k=>k.startsWith(d.d));if(!v.length)return '🌤 '+avg[d.d][0]+'–'+avg[d.d][1]+'°';const ts=v.map(k=>wx[k].t),m=wx[d.d+'T12:00'];return icon(m&&m.c)+' '+Math.min(...ts)+'–'+Math.max(...ts)+'°'};
   const HOTEL='2-10-12 Nishiki Naka-ku Nagoya';
   const cnt=e=>e.part.filter(p=>p<members.length).length;
+  const ok=ref(true),savedLbl=ref('儲存'),bk=ref(''),msg=ref('');
+  try{localStorage.setItem('t','1');localStorage.removeItem('t')}catch(e){ok.value=false}
+  try{navigator.storage.persist()}catch(e){}
+  const snap=()=>JSON.stringify({stops,members,expenses,rate:rate.value});
+  const saveNow=()=>{try{localStorage.setItem('ngy26b',snap());ok.value=true;savedLbl.value='已存 '+new Date().toTimeString().slice(0,5);msg.value='已儲存 ✓'}catch(e){ok.value=false;msg.value='儲存失敗,請改用 Safari / Chrome 開啟。'}};
+  const copyBk=async()=>{bk.value=snap();try{await navigator.clipboard.writeText(bk.value);msg.value='已複製,請貼到 LINE 記事本或 Keep 保存。'}catch(e){msg.value='請長按上方方框全選複製。'}};
+  const restore=()=>{try{const j=JSON.parse(bk.value);if(!j.stops)throw 0;Object.keys(stops).forEach(k=>delete stops[k]);Object.assign(stops,j.stops);members.splice(0,members.length,...(j.members||[]));expenses.splice(0,expenses.length,...(j.expenses||[]));rate.value=j.rate||rate.value;ex.part=members.map((_,k)=>k);ex.payer=0;saveNow();msg.value='已還原 ✓'}catch(e){msg.value='備份內容格式不正確。'}};
   const nav=s=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(s.q);
   const route=computed(()=>{const m=mapped.value.slice(0,10);if(m.length<2)return '';const e=x=>encodeURIComponent(x.q);return 'https://www.google.com/maps/dir/?api=1&origin='+e(m[0])+'&destination='+e(m[m.length-1])+(m.length>2?'&waypoints='+m.slice(1,-1).map(e).join('%7C'):'')+'&travelmode=walking'});
   const openEdit=s=>{form.value=s?{...s}:{t:'09:00',n:'',q:'',d:''}};
@@ -176,7 +185,7 @@ createApp({setup(){
   const pay=computed(()=>{const b=members.map(()=>0);expenses.forEach(e=>{const a=e.cur==='TWD'?(rate.value>0?e.amt/rate.value:0):e.amt;b[e.payer]+=a;const P=e.part.filter(p=>p<members.length);P.forEach(p=>b[p]-=a/P.length)});
     const cr=[],db=[];b.forEach((v,i)=>{v=Math.round(v);if(v>0)cr.push({i,v});if(v<0)db.push({i,v:-v})});const out=[];
     while(cr.length&&db.length){const c=cr[0],d=db[0],a=Math.min(c.v,d.v);out.push({from:members[d.i],to:members[c.i],amt:a});c.v-=a;d.v-=a;if(!c.v)cr.shift();if(!d.v)db.shift()}return out});
-  return{days,sel,tab,form,live,stops,members,expenses,ex,rate,rateLive,needRate,cnt,list,mapped,wxAt,dayWx,nav,route,openEdit,save,del,rmMember,addEx,pay}
+  return{days,sel,tab,form,live,stops,members,expenses,ex,rate,rateLive,needRate,cnt,ok,savedLbl,bk,msg,saveNow,copyBk,restore,list,mapped,wxAt,dayWx,nav,route,openEdit,save,del,rmMember,addEx,pay}
 }}).mount('#app');
 </script>
 </body>
